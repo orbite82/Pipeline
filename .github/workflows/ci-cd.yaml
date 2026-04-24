@@ -1,116 +1,50 @@
-healthname: CI/CD Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["main", "dev"]
-  pull_request:
-    branches: ["main", "dev"]
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    branches:
+      - dev
+      - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
+      - name: Configurar Docker para GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Instalar dependências
-        run: npm install
+      - name: Build da imagem
+        run: |
+          docker build -t ghcr.io/orbite82/pipeline/study-app:latest .
 
-      - name: Testar aplicação
-        run: npm test || echo "Nenhum teste configurado"
-
-      - name: Login no GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: orbite82
-          password: ${{ secrets.GHCR_PIPELINE_TOKEN }}
-
-      - name: Build e Push da imagem
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/orbite82/pipeline/study-app:latest
-
-  deploy-dev:
-    runs-on: self-hosted
-    needs: build
-    environment: dev-study
-    if: github.ref == 'refs/heads/dev'
-    steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
+      - name: Push da imagem para GHCR
+        run: |
+          docker push ghcr.io/orbite82/pipeline/study-app:latest
 
       - name: Configurar kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: "v1.29.0"
-
-      - name: Configurar acesso ao cluster DEV
         run: |
-          printf "%s" "${{ secrets.KUBECONFIG_DEV }}" > $HOME/.kube/config
+          echo "${{ secrets.KUBECONFIG_DEV }}" > kubeconfig.yaml
+          export KUBECONFIG=$PWD/kubeconfig.yaml
+        if: github.ref == 'refs/heads/dev'
 
-      - name: Garantir namespace DEV
-        run: kubectl create namespace dev-study --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Aplicar manifests DEV
+      - name: Deploy em DEV
         run: |
           kubectl apply -f k8s/deployment-dev.yaml
-          kubectl apply -f k8s/service-dev.yaml
+          kubectl rollout status deployment study-app -n dev-study
+        if: github.ref == 'refs/heads/dev'
 
-      - name: Validar rollout do deployment
-        run: kubectl rollout status deployment study-app -n dev-study
-
-      - name: Validar Service DEV
-        run: kubectl get svc study-app -n dev-study
-
-      - name: Testar endpoint de saúde
+      - name: Configurar kubectl (PROD)
         run: |
-          kubectl run tmp-test --rm --restart=Never --attach --image=curlimages/curl -n dev-study -- \
-            curl -s http://study-app:80/health
+          echo "${{ secrets.KUBECONFIG_PROD }}" > kubeconfig.yaml
+          export KUBECONFIG=$PWD/kubeconfig.yaml
+        if: github.ref == 'refs/heads/main'
 
-  deploy-prod:
-    runs-on: self-hosted
-    needs: build
-    environment: prod-study
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
-
-      - name: Configurar kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: "v1.29.0"
-
-      - name: Configurar acesso ao cluster PROD
-        run: |
-          printf "%s" "${{ secrets.KUBECONFIG_PROD }}" > $HOME/.kube/config
-
-      - name: Garantir namespace PROD
-        run: kubectl create namespace prod-study --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Aplicar manifests PROD
+      - name: Deploy em PROD
         run: |
           kubectl apply -f k8s/deployment-prod.yaml
-          kubectl apply -f k8s/service-prod.yaml
-
-      - name: Validar rollout do deployment
-        run: kubectl rollout status deployment study-app -n prod-study
-
-      - name: Validar Service PROD
-        run: kubectl get svc study-app -n prod-study
-
-      - name: Testar endpoint de saúde
-        run: |
-          kubectl run tmp-test --rm --restart=Never --attach --image=curlimages/curl -n prod-study -- \
-            curl -s http://study-app:80/health
+          kubectl rollout status deployment study-app -n prod-study
+        if: github.ref == 'refs/heads/main'
