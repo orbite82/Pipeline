@@ -75,8 +75,8 @@ jobs:
 
       - name: Testar endpoint de saúde
         run: |
-          kubectl run tmp-test --rm --image=curlimages/curl -n dev-study -- \
-            curl -s http://study-app:80/health
+          POD=$(kubectl get pod -n dev-study -l app=study-app -o jsonpath='{.items[0].metadata.name}')
+          kubectl exec -n dev-study $POD -- curl -s http://localhost:3000/health
 
   deploy-prod:
     runs-on: self-hosted
