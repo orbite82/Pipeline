@@ -1,4 +1,4 @@
-name: CI/CD pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -6,17 +6,20 @@ on:
   pull_request:
     branches: ["main", "dev"]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # em vez de v3
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4 # em vez de v3
         with:
-          node-version: "18"
+          node-version: "20"
 
       - name: Instalar dependências
         run: npm install
@@ -28,7 +31,7 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: orbite82
           password: ${{ secrets.GHCR_PIPELINE_TOKEN }} #ajustado
 
       - name: Build e Push da imagem
@@ -45,10 +48,10 @@ jobs:
     if: github.ref == 'refs/heads/dev'
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configurar kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
         with:
           version: "v1.29.0"
 
@@ -69,10 +72,10 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configurar kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
         with:
           version: "v1.29.0"
 
