@@ -14,37 +14,37 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Configurar Docker para GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Login no GHCR
+        run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u orbite82 --password-stdin
 
       - name: Build da imagem
-        run: |
-          docker build -t ghcr.io/orbite82/pipeline/study-app:latest .
+        run: docker build -t ghcr.io/orbite82/pipeline/study-app:latest .
 
       - name: Push da imagem para GHCR
-        run: |
-          docker push ghcr.io/orbite82/pipeline/study-app:latest
+        run: docker push ghcr.io/orbite82/pipeline/study-app:latest
 
-      - name: Configurar kubectl
+      # Deploy em DEV
+      - name: Configurar kubectl (DEV)
+        if: github.ref == 'refs/heads/dev'
         run: |
           echo "${{ secrets.KUBECONFIG_DEV }}" > kubeconfig.yaml
           export KUBECONFIG=$PWD/kubeconfig.yaml
-        if: github.ref == 'refs/heads/dev'
 
       - name: Deploy em DEV
+        if: github.ref == 'refs/heads/dev'
         run: |
           kubectl apply -f k8s/deployment-dev.yaml
           kubectl rollout status deployment study-app -n dev-study
-        if: github.ref == 'refs/heads/dev'
 
+      # Deploy em PROD
       - name: Configurar kubectl (PROD)
+        if: github.ref == 'refs/heads/main'
         run: |
           echo "${{ secrets.KUBECONFIG_PROD }}" > kubeconfig.yaml
           export KUBECONFIG=$PWD/kubeconfig.yaml
-        if: github.ref == 'refs/heads/main'
 
       - name: Deploy em PROD
+        if: github.ref == 'refs/heads/main'
         run: |
           kubectl apply -f k8s/deployment-prod.yaml
           kubectl rollout status deployment study-app -n prod-study
-        if: github.ref == 'refs/heads/main'
