@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: study-app
+  namespace: prod-study
+spec:
+  replicas: 3   # produção geralmente com mais réplicas
+  selector:
+    matchLabels:
+      app: study-app
+  template:
+    metadata:
+      labels:
+        app: study-app
+    spec:
+      containers:
+      - name: study-app
+        image: localhost:5000/study-app:latest
+        ports:
+        - containerPort: 3000
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
