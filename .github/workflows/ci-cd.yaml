@@ -41,7 +41,9 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ghcr.io/orbite82/pipeline/study-app:latest
+          tags: |
+            ghcr.io/orbite82/pipeline/study-app:latest
+            ghcr.io/orbite82/pipeline/study-app:${{ github.sha }}
 
   deploy-dev:
     runs-on: self-hosted
