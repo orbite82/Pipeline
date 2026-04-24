@@ -32,7 +32,7 @@ jobs:
         with:
           registry: ghcr.io
           username: orbite82
-          password: ${{ secrets.GHCR_PAT }} #alterado
+          password: ${{ secrets.GHCR_PAT }} #alterado 2
 
       - name: Build e Push da imagem
         uses: docker/build-push-action@v4
