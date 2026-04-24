@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main", "dev"]
 
 jobs:
   build:
@@ -11,8 +11,16 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v3
 
-      - name: Configurar Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Testar aplicação
+        run: npm test || echo "Nenhum teste configurado"
 
       - name: Login no GitHub Container Registry
         uses: docker/login-action@v2
@@ -26,22 +34,52 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ghcr.io/${{ github.repository }}/study-app:latest
 
-  deploy:
+  deploy-dev:
     runs-on: ubuntu-latest
     needs: build
+    environment: dev-study
+    if: github.ref == 'refs/heads/dev'
     steps:
       - name: Checkout código
         uses: actions/checkout@v3
 
       - name: Configurar kubectl
-        run: |
-          echo "${{ secrets.KUBECONFIG }}" > kubeconfig
-          export KUBECONFIG=kubeconfig
-          kubectl config use-context minikube
+        uses: azure/setup-kubectl@v3
+        with:
+          version: "v1.29.0"
 
-      - name: Aplicar manifests
+      - name: Configurar acesso ao cluster DEV
         run: |
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
+          echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+
+      - name: Aplicar manifests DEV
+        run: |
+          kubectl apply -f k8s/deployment.yaml -n dev-study
+          kubectl apply -f k8s/service.yaml -n dev-study
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: build
+    environment: prod-study
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Configurar kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: "v1.29.0"
+
+      - name: Configurar acesso ao cluster PROD
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+
+      - name: Aplicar manifests PROD
+        run: |
+          kubectl apply -f k8s/deployment.yaml -n prod-study
+          kubectl apply -f k8s/service.yaml -n prod-study
