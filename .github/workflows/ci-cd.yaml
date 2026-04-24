@@ -60,6 +60,9 @@ jobs:
           echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
           export KUBECONFIG=kubeconfig.yaml
 
+      - name: Garantir namespace DEV
+        run: kubectl create namespace dev-study --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Aplicar manifests DEV
         run: |
           kubectl apply -f k8s/deployment.yaml -n dev-study
@@ -83,6 +86,9 @@ jobs:
         run: |
           echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
           export KUBECONFIG=kubeconfig.yaml
+
+      - name: Garantir namespace PROD
+        run: kubectl create namespace prod-study --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Aplicar manifests PROD
         run: |
