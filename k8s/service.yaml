@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: study-app        # <-- troque de study-app-service para study-app
+  name: study-app
   namespace: dev-study
 spec:
   selector:
-    app: study-app       # <-- igual ao label do Deployment
+    app: study-app
   ports:
     - protocol: TCP
       port: 80
       targetPort: 3000
-  type: NodePort
+  type: NodePort   # <-- ESSENCIAL
