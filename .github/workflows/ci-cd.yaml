@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # continua na nuvem
     steps:
       - name: Checkout código
         uses: actions/checkout@v4 # em vez de v3
@@ -42,7 +42,7 @@ jobs:
           tags: ghcr.io/orbite82/pipeline/study-app:latest
 
   deploy-dev:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted   # antes era ubuntu-latest # precisa acesso ao Minikube
     needs: build
     environment: dev-study
     if: github.ref == 'refs/heads/dev'
@@ -71,7 +71,7 @@ jobs:
           kubectl apply -f k8s/service.yaml -n dev-study
 
   deploy-prod:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted   # antes era ubuntu-latest # precisa acesso ao Minikube
     needs: build
     environment: prod-study
     if: github.ref == 'refs/heads/main'
