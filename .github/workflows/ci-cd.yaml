@@ -11,13 +11,13 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest # continua na nuvem
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout código
-        uses: actions/checkout@v4 # em vez de v3
+        uses: actions/checkout@v4
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v4 # em vez de v3
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
 
@@ -32,7 +32,7 @@ jobs:
         with:
           registry: ghcr.io
           username: orbite82
-          password: ${{ secrets.GHCR_PIPELINE_TOKEN }} #ajustado
+          password: ${{ secrets.GHCR_PIPELINE_TOKEN }}
 
       - name: Build e Push da imagem
         uses: docker/build-push-action@v4
@@ -41,45 +41,45 @@ jobs:
           push: true
           tags: ghcr.io/orbite82/pipeline/study-app:latest
 
-deploy-dev:
-  runs-on: self-hosted
-  needs: build
-  environment: dev-study
-  if: github.ref == 'refs/heads/dev'
-  steps:
-    - name: Checkout código
-      uses: actions/checkout@v4
+  deploy-dev:
+    runs-on: self-hosted
+    needs: build
+    environment: dev-study
+    if: github.ref == 'refs/heads/dev'
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
 
-    - name: Configurar kubectl
-      uses: azure/setup-kubectl@v4
-      with:
-        version: "v1.29.0"
+      - name: Configurar kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: "v1.29.0"
 
-    - name: Configurar acesso ao cluster DEV
-      run: |
-        printf "%s" "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+      - name: Configurar acesso ao cluster DEV
+        run: |
+          printf "%s" "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
 
-    - name: Garantir namespace DEV
-      run: kubectl create namespace dev-study --dry-run=client -o yaml | kubectl apply -f -
+      - name: Garantir namespace DEV
+        run: kubectl create namespace dev-study --dry-run=client -o yaml | kubectl apply -f -
 
-    - name: Aplicar manifests DEV
-      run: |
-        kubectl apply -f k8s/deployment.yaml -n dev-study
-        kubectl apply -f k8s/service.yaml -n dev-study
+      - name: Aplicar manifests DEV
+        run: |
+          kubectl apply -f k8s/deployment.yaml -n dev-study
+          kubectl apply -f k8s/service.yaml -n dev-study
 
-    - name: Validar rollout do deployment
-      run: kubectl rollout status deployment study-app -n dev-study
+      - name: Validar rollout do deployment
+        run: kubectl rollout status deployment study-app -n dev-study
 
-    - name: Validar Service DEV
-      run: kubectl get svc study-app -n dev-study
+      - name: Validar Service DEV
+        run: kubectl get svc study-app -n dev-study
 
-    - name: Testar endpoint de saúde
-      run: |
-        kubectl run tmp-test --rm -i --tty --image=curlimages/curl -n dev-study -- \
-          curl -s http://study-app:80/health
+      - name: Testar endpoint de saúde
+        run: |
+          kubectl run tmp-test --rm -i --tty --image=curlimages/curl -n dev-study -- \
+            curl -s http://study-app:80/health
 
   deploy-prod:
-    runs-on: self-hosted   # antes era ubuntu-latest # precisa acesso ao Minikube
+    runs-on: self-hosted
     needs: build
     environment: prod-study
     if: github.ref == 'refs/heads/main'
@@ -92,15 +92,12 @@ deploy-dev:
         with:
           version: "v1.29.0"
 
-      - name: Configurar acesso ao cluster PROD #alterado kubeconfig
+      - name: Configurar acesso ao cluster PROD
         run: |
-          echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
-          export KUBECONFIG=kubeconfig.yaml
+          printf "%s" "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
 
       - name: Garantir namespace PROD
-        run: | 
-          printf "%s" "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
-          export KUBECONFIG=$PWD/kubeconfig.yaml
+        run: kubectl create namespace prod-study --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Aplicar manifests PROD
         run: |
