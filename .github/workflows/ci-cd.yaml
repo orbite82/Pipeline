@@ -41,34 +41,40 @@ jobs:
           push: true
           tags: ghcr.io/orbite82/pipeline/study-app:latest
 
-  deploy-dev:
-    runs-on: self-hosted   # antes era ubuntu-latest # precisa acesso ao Minikube
-    needs: build
-    environment: dev-study
-    if: github.ref == 'refs/heads/dev'
-    steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
+deploy-dev:
+  runs-on: self-hosted
+  needs: build
+  environment: dev-study
+  if: github.ref == 'refs/heads/dev'
+  steps:
+    - name: Checkout código
+      uses: actions/checkout@v4
 
-      - name: Configurar kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: "v1.29.0"
+    - name: Configurar kubectl
+      uses: azure/setup-kubectl@v4
+      with:
+        version: "v1.29.0"
 
-      - name: Configurar acesso ao cluster DEV
-        run: |
-          echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
-          export KUBECONFIG=kubeconfig.yaml
+    - name: Configurar acesso ao cluster DEV
+      run: |
+        printf "%s" "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
 
-      - name: Garantir namespace DEV #alterado kubeconfig
-        run: | 
-          printf "%s" "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml 
-          export KUBECONFIG=$PWD/kubeconfig.yaml
+    - name: Garantir namespace DEV
+      run: kubectl create namespace dev-study --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Aplicar manifests DEV
-        run: |
-          kubectl apply -f k8s/deployment.yaml -n dev-study
-          kubectl apply -f k8s/service.yaml -n dev-study
+    - name: Validar conexão com cluster
+      run: kubectl get nodes
+
+    - name: Aplicar manifests DEV
+      run: |
+        kubectl apply -f k8s/deployment.yaml -n dev-study
+        kubectl apply -f k8s/service.yaml -n dev-study
+
+    - name: Validar rollout do deployment
+      run: kubectl rollout status deployment study-app -n dev-study
+
+    - name: Validar criação do Service
+      run: kubectl get svc study-app -n dev-study
 
   deploy-prod:
     runs-on: self-hosted   # antes era ubuntu-latest # precisa acesso ao Minikube
