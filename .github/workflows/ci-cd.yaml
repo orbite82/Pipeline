@@ -57,15 +57,15 @@ jobs:
 
       - name: Configurar acesso ao cluster DEV
         run: |
-          printf "%s" "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          printf "%s" "${{ secrets.KUBECONFIG_DEV }}" > $HOME/.kube/config
 
       - name: Garantir namespace DEV
         run: kubectl create namespace dev-study --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Aplicar manifests DEV
         run: |
-          kubectl apply -f k8s/deployment.yaml -n dev-study
-          kubectl apply -f k8s/service.yaml -n dev-study
+          kubectl apply -f k8s/deployment-dev.yaml
+          kubectl apply -f k8s/service-dev.yaml
 
       - name: Validar rollout do deployment
         run: kubectl rollout status deployment study-app -n dev-study
@@ -94,18 +94,21 @@ jobs:
 
       - name: Configurar acesso ao cluster PROD
         run: |
-          printf "%s" "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          printf "%s" "${{ secrets.KUBECONFIG_PROD }}" > $HOME/.kube/config
 
       - name: Garantir namespace PROD
         run: kubectl create namespace prod-study --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Aplicar manifests PROD
         run: |
-          kubectl apply -f k8s/deployment.yaml -n prod-study
-          kubectl apply -f k8s/service.yaml -n prod-study
+          kubectl apply -f k8s/deployment-prod.yaml
+          kubectl apply -f k8s/service-prod.yaml
 
       - name: Validar rollout do deployment
         run: kubectl rollout status deployment study-app -n prod-study
+
+      - name: Validar Service PROD
+        run: kubectl get svc study-app -n prod-study
 
       - name: Testar endpoint de saúde
         run: |
