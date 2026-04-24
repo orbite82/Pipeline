@@ -1,0 +1,14 @@
+{
+  "name": "study-app",
+  "version": "1.0.0",
+  "description": "Aplicação simples para estudo de CI/CD com GitHub Actions e Kubernetes no Minikube",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js"
+  },
+  "author": "Thiago",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
