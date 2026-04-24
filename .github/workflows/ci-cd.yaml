@@ -60,9 +60,9 @@ jobs:
           echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
           export KUBECONFIG=kubeconfig.yaml
 
-      - name: Garantir namespace DEV
+      - name: Garantir namespace DEV #alterado kubeconfig
         run: | 
-          printf "%s" "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
+          printf "%s" "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml 
           export KUBECONFIG=$PWD/kubeconfig.yaml
 
       - name: Aplicar manifests DEV
@@ -84,7 +84,7 @@ jobs:
         with:
           version: "v1.29.0"
 
-      - name: Configurar acesso ao cluster PROD
+      - name: Configurar acesso ao cluster PROD #alterado kubeconfig
         run: |
           echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
           export KUBECONFIG=kubeconfig.yaml
