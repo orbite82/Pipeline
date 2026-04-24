@@ -73,6 +73,9 @@ deploy-dev:
     - name: Validar rollout do deployment
       run: kubectl rollout status deployment study-app -n dev-study
 
+    - name: Validar criação do Service
+      run: kubectl get svc study-app -n dev-study
+
   deploy-prod:
     runs-on: self-hosted   # antes era ubuntu-latest # precisa acesso ao Minikube
     needs: build
