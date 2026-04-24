@@ -75,9 +75,8 @@ jobs:
 
       - name: Testar endpoint de saúde
         run: |
-          kubectl run tmp-test --restart=Never --image=curlimages/curl -n dev-study -- \
+          kubectl run tmp-test --rm --restart=Never --attach --image=curlimages/curl -n dev-study -- \
           curl -s http://study-app:80/health
-          kubectl delete pod tmp-test -n dev-study || true
 
   deploy-prod:
     runs-on: self-hosted
