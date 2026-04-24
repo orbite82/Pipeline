@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD pipeline
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: tags: ghcr.io/${{ github.repository_owner }}/pipeline/study-app:latest
+          tags: ghcr.io/orbite82/pipeline/study-app:latest
 
   deploy-dev:
     runs-on: ubuntu-latest
