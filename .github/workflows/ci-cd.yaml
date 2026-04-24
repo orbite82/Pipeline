@@ -6,17 +6,20 @@ on:
   pull_request:
     branches: ["main", "dev"]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # continua na nuvem
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # em vez de v3
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4 # em vez de v3
         with:
-          node-version: "18"
+          node-version: "22"
 
       - name: Instalar dependências
         run: npm install
@@ -28,27 +31,27 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: orbite82
+          password: ${{ secrets.GHCR_PIPELINE_TOKEN }} #ajustado
 
       - name: Build e Push da imagem
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: tags: ghcr.io/${{ github.repository_owner }}/pipeline/study-app:latest
+          tags: ghcr.io/orbite82/pipeline/study-app:latest
 
   deploy-dev:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted   # antes era ubuntu-latest # precisa acesso ao Minikube
     needs: build
     environment: dev-study
     if: github.ref == 'refs/heads/dev'
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configurar kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
         with:
           version: "v1.29.0"
 
@@ -57,29 +60,39 @@ jobs:
           echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
           export KUBECONFIG=kubeconfig.yaml
 
+      - name: Garantir namespace DEV #alterado kubeconfig
+        run: | 
+          printf "%s" "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml 
+          export KUBECONFIG=$PWD/kubeconfig.yaml
+
       - name: Aplicar manifests DEV
         run: |
           kubectl apply -f k8s/deployment.yaml -n dev-study
           kubectl apply -f k8s/service.yaml -n dev-study
 
   deploy-prod:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted   # antes era ubuntu-latest # precisa acesso ao Minikube
     needs: build
     environment: prod-study
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configurar kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
         with:
           version: "v1.29.0"
 
-      - name: Configurar acesso ao cluster PROD
+      - name: Configurar acesso ao cluster PROD #alterado kubeconfig
         run: |
           echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
           export KUBECONFIG=kubeconfig.yaml
+
+      - name: Garantir namespace PROD
+        run: | 
+          printf "%s" "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
+          export KUBECONFIG=$PWD/kubeconfig.yaml
 
       - name: Aplicar manifests PROD
         run: |
