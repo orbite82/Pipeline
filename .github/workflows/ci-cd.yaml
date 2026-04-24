@@ -92,7 +92,7 @@ jobs:
         with:
           version: "v1.29.0"
 
-      - name: Configurar acesso ao cluster PROD
+      - name: Configurar acesso ao cluster PROD #ajustes
         run: |
           printf "%s" "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
 
@@ -110,4 +110,4 @@ jobs:
       - name: Testar endpoint de saúde
         run: |
           kubectl run tmp-test --rm --restart=Never --attach --image=curlimages/curl -n prod-study -- \
-            curl -s http://study-app:80/health
+            curl -s http://study-app:80/health 
