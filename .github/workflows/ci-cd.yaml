@@ -75,7 +75,7 @@ jobs:
 
       - name: Testar endpoint de saúde
         run: |
-          kubectl run tmp-test --rm -i --tty --image=curlimages/curl -n dev-study -- \
+          kubectl run tmp-test --rm --image=curlimages/curl -n dev-study -- \
             curl -s http://study-app:80/health
 
   deploy-prod:
