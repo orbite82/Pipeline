@@ -62,9 +62,6 @@ deploy-dev:
     - name: Garantir namespace DEV
       run: kubectl create namespace dev-study --dry-run=client -o yaml | kubectl apply -f -
 
-    - name: Validar conexão com cluster
-      run: kubectl get nodes
-
     - name: Aplicar manifests DEV
       run: |
         kubectl apply -f k8s/deployment.yaml -n dev-study
@@ -73,8 +70,13 @@ deploy-dev:
     - name: Validar rollout do deployment
       run: kubectl rollout status deployment study-app -n dev-study
 
-    - name: Validar criação do Service
+    - name: Validar Service DEV
       run: kubectl get svc study-app -n dev-study
+
+    - name: Testar endpoint de saúde
+      run: |
+        kubectl run tmp-test --rm -i --tty --image=curlimages/curl -n dev-study -- \
+          curl -s http://study-app:80/health
 
   deploy-prod:
     runs-on: self-hosted   # antes era ubuntu-latest # precisa acesso ao Minikube
