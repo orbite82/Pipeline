@@ -13,9 +13,11 @@ spec:
       labels:
         app: study-app
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
       - name: study-app
-        image: localhost:5000/study-app:latest
+        image: ghcr.io/orbite82/pipeline/study-app:latest
         ports:
         - containerPort: 3000
         livenessProbe:
@@ -30,3 +32,10 @@ spec:
             port: 3000
           initialDelaySeconds: 5
           periodSeconds: 5
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"

@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+healthname: CI/CD Pipeline
 
 on:
   push:
