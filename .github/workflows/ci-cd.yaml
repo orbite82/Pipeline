@@ -76,7 +76,7 @@ jobs:
       - name: Testar endpoint de saúde
         run: |
           kubectl run tmp-test --rm --restart=Never --attach --image=curlimages/curl -n dev-study -- \
-          curl -s http://study-app:80/health
+            curl -s http://study-app:80/health
 
   deploy-prod:
     runs-on: self-hosted
@@ -103,3 +103,11 @@ jobs:
         run: |
           kubectl apply -f k8s/deployment.yaml -n prod-study
           kubectl apply -f k8s/service.yaml -n prod-study
+
+      - name: Validar rollout do deployment
+        run: kubectl rollout status deployment study-app -n prod-study
+
+      - name: Testar endpoint de saúde
+        run: |
+          kubectl run tmp-test --rm --restart=Never --attach --image=curlimages/curl -n prod-study -- \
+            curl -s http://study-app:80/health
